@@ -10,12 +10,15 @@ import {
 	Put,
 	Patch,
 	Delete,
-	Query
+	Query,
+	UseFilters
 } from '@nestjs/common';
 import { CoffeesService } from './coffees.service';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
+import { HttpExceptionFilterFilter } from 'src/common/filters/http-exception.filter/http-exception.filter.filter';
 
+@UseFilters(new HttpExceptionFilterFilter())
 @Controller('coffees')
 export class CoffeesController {
 	constructor(private readonly coffeeService: CoffeesService) {}

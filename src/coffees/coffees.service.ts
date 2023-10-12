@@ -7,46 +7,49 @@ import {
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 import { Coffee } from './entities/coffee.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class CoffeesService {
-	private coffees: Coffee[] = [
-		{
-			id: 1,
-			name: 'Shipwreck Roast',
-			brand: 'Buddy Brew',
-			flavors: ['chocolate', 'vanilla']
-		}
-	];
-
+	constructor(
+		@InjectRepository(Coffee)
+		private readonly coffeesRepository: Repository<Coffee>
+	) {}
 	findAll() {
-		return this.coffees;
+		return this.coffeesRepository.find();
 	}
 
-	findOne(id: string) {
-		const coffee = this.coffees.find((item) => item.id === +id);
-		if (!coffee) {
+	async findOne(id: string) {
+		const coffees = await this.findOne(id);
+
+		// const coffee = coffees.find((item) => item.id === +id);
+		if (!coffees) {
 			throw new NotFoundException(`Coffee #${id} not found`);
 		}
 
-		return coffee;
+		return coffees;
 	}
 
 	create(createCoffeeDto) {
-		this.coffees.push(createCoffeeDto);
+		const coffee = this.coffeesRepository.create(createCoffeeDto);
+		return this.coffeesRepository.save(coffee);
 	}
 
-	update(id, updateCoffee) {
-		const existingCoffee = this.coffees.find(id);
+	async update(id, updateCoffee) {
+		const existingCoffee = await this.coffeesRepository.preload({
+			id: +id,
+			...updateCoffee
+		});
 
-		if (existingCoffee) {
+		if (!existingCoffee) {
+			throw new NotFoundException(`Coffee #${id} not found`);
 		}
+		return this.coffeesRepository.save(existingCoffee);
 	}
 
-	delete(id) {
-		const coffeeIndex = this.coffees.findIndex((item) => item.id == +id);
-		if (coffeeIndex >= 0) {
-			this.coffees.splice(coffeeIndex, 1);
-		}
+	async delete(id) {
+		const coffeeIndex = await this.findOne(id);
+		return this.coffeesRepository.remove(coffeeIndex);
 	}
 }
